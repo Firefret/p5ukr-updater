@@ -13,11 +13,14 @@ namespace SoloviinaP5Updater
     {
         private ProgressBar updateProgressBar;
         private IConfiguration configuration;
+        private Label progressLabel;
 
         public Form1()
         {
             InitializeComponent();
             this.Opacity = 0;
+            updateProgressBar = new ProgressBar();
+            progressLabel = new Label();
             LoadConfiguration();
         }
 
@@ -29,10 +32,10 @@ namespace SoloviinaP5Updater
             configuration = builder.Build();
         }
 
-        private async void Form1_Load(object sender, EventArgs e)
+        private async void Form1_Load(object? sender, EventArgs e)
         {
-            string localVersion = GetLocalVersion();
-            string githubVersion = await GetGithubVersionAsync();
+            string? localVersion = GetLocalVersion();
+            string? githubVersion = await GetGithubVersionAsync();
 
             Debug.WriteLine($"Local Version: {localVersion}");
             Debug.WriteLine($"GitHub Version: {githubVersion}");
@@ -94,12 +97,16 @@ namespace SoloviinaP5Updater
             }
         }
 
-        private string GetLocalVersion()
+        private string? GetLocalVersion()
         {
             try
             {
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
-                string relativePath = configuration["LocalVersionFilePath"];
+                string? relativePath = configuration["LocalVersionFilePath"];
+                if (relativePath == null)
+                {
+                    throw new InvalidOperationException("LocalVersionFilePath is not configured.");
+                }
                 string fullPath = Path.GetFullPath(Path.Combine(basePath, relativePath));
 
                 if (!fullPath.StartsWith(basePath))
@@ -122,9 +129,13 @@ namespace SoloviinaP5Updater
             }
         }
 
-        private async Task<string> GetGithubVersionAsync()
+        private async Task<string?> GetGithubVersionAsync()
         {
-            string githubApiUrl = configuration["GitHubApiUrl"];
+            string? githubApiUrl = configuration["GitHubApiUrl"];
+            if (githubApiUrl == null)
+            {
+                return null;
+            }
             try
             {
                 using (HttpClient client = new HttpClient())
@@ -135,15 +146,15 @@ namespace SoloviinaP5Updater
                     {
                         string content = await response.Content.ReadAsStringAsync();
                         Debug.WriteLine($"GitHub API response content: {content}");
-                        dynamic releases = JsonConvert.DeserializeObject(content);
+                        dynamic? releases = JsonConvert.DeserializeObject(content);
 
-                        if (releases.Count == 0)
+                        if (releases == null || releases.Count == 0)
                         {
                             Debug.WriteLine("No releases found in the GitHub repository.");
                             return null;
                         }
 
-                        Version latestVersion = null;
+                        Version? latestVersion = null;
                         foreach (var release in releases)
                         {
                             string tagName = release.tag_name;
@@ -183,33 +194,43 @@ namespace SoloviinaP5Updater
 
         private async Task StartUpdateProcessAsync()
         {
-            string githubApiUrl = configuration["GitHubApiUrl"];
+            string? githubApiUrl = configuration["GitHubApiUrl"];
+            if (githubApiUrl == null)
+            {
+                MessageBox.Show("GitHub API URL is not configured.",
+                                "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                this.Close();
+                return;
+            }
             string downloadDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
             try
             {
                 using (HttpClient client = new HttpClient())
                 {
-                    client.DefaultRequestHeaders.UserAgent.ParseAdd("request");
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd("SoloviinaP5Updater");
                     HttpResponseMessage response = await client.GetAsync(githubApiUrl);
                     if (response.IsSuccessStatusCode)
                     {
                         string content = await response.Content.ReadAsStringAsync();
-                        dynamic releases = JsonConvert.DeserializeObject(content);
+                        dynamic? releases = JsonConvert.DeserializeObject(content);
 
-                        dynamic latestRelease = null;
-                        Version latestVersion = null;
-                        foreach (var release in releases)
+                        dynamic? latestRelease = null;
+                        Version? latestVersion = null;
+                        if (releases != null)
                         {
-                            string tagName = release.tag_name;
-                            var match = System.Text.RegularExpressions.Regex.Match(tagName, @"v(\d+\.\d+\.\d+)");
-                            if (match.Success)
+                            foreach (var release in releases)
                             {
-                                Version releaseVersion = new Version(match.Groups[1].Value);
-                                if (latestVersion == null || releaseVersion > latestVersion)
+                                string tagName = release.tag_name;
+                                var match = System.Text.RegularExpressions.Regex.Match(tagName, @"v(\d+\.\d+\.\d+)");
+                                if (match.Success)
                                 {
-                                    latestVersion = releaseVersion;
-                                    latestRelease = release;
+                                    Version releaseVersion = new Version(match.Groups[1].Value);
+                                    if (latestVersion == null || releaseVersion > latestVersion)
+                                    {
+                                        latestVersion = releaseVersion;
+                                        latestRelease = release;
+                                    }
                                 }
                             }
                         }
@@ -222,7 +243,7 @@ namespace SoloviinaP5Updater
 
                             // Extract checksum from release notes
                             string releaseNotes = latestRelease.body;
-                            string expectedChecksum = ExtractChecksumFromReleaseNotes(releaseNotes);
+                            string? expectedChecksum = ExtractChecksumFromReleaseNotes(releaseNotes);
 
                             if (string.IsNullOrEmpty(expectedChecksum))
                             {
@@ -299,7 +320,7 @@ namespace SoloviinaP5Updater
                                             progressLabel.Text = $"Розпакування: {progress}% - Швидкість: {speed:0.00} entries/s";
                                         }
                                     }
-                                    MessageBox.Show($"Файл успішно розпаковано та оновлено до версії {latestVersion}.", "Успіх!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                    MessageBox.Show($"Українізатор успішно розпаковано та оновлено до версії {latestVersion}.", "Успіх!", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                                     if (File.Exists(filePath))
                                     {
@@ -308,7 +329,7 @@ namespace SoloviinaP5Updater
                                     }
 
                                     // Update the local version file
-                                    UpdateLocalVersion(latestVersion.ToString());
+                                    UpdateLocalVersion(latestVersion?.ToString() ?? string.Empty);
                                 }
                                 catch (Exception ex)
                                 {
@@ -345,7 +366,7 @@ namespace SoloviinaP5Updater
             }
         }
 
-        private string ExtractChecksumFromReleaseNotes(string releaseNotes)
+        private string? ExtractChecksumFromReleaseNotes(string releaseNotes)
         {
             var match = System.Text.RegularExpressions.Regex.Match(releaseNotes, @"SHA256 Checksum\s*`([a-fA-F0-9]{64})`");
             return match.Success ? match.Groups[1].Value : null;
@@ -449,7 +470,6 @@ namespace SoloviinaP5Updater
             }
         }
 
-        private Label progressLabel;
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
@@ -480,7 +500,7 @@ namespace SoloviinaP5Updater
             ClientSize = new Size(697, 80);
             Controls.Add(progressLabel);
             Controls.Add(updateProgressBar);
-            Icon = (Icon)resources.GetObject("$this.Icon");
+            Icon = (Icon?)resources.GetObject("$this.Icon");
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Updater";
@@ -493,7 +513,11 @@ namespace SoloviinaP5Updater
             try
             {
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
-                string relativePath = configuration["LocalVersionFilePath"];
+                string? relativePath = configuration["LocalVersionFilePath"];
+                if (relativePath == null)
+                {
+                    throw new InvalidOperationException("LocalVersionFilePath is not configured.");
+                }
                 string fullPath = Path.GetFullPath(Path.Combine(basePath, relativePath));
 
                 if (!fullPath.StartsWith(basePath))
