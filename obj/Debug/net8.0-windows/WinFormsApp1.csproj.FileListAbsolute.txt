@@ -1,0 +1,6 @@
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\obj\Debug\net8.0-windows\SoloviinaP5Updater.Form1.resources
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.csproj.GenerateResource.cache
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.GeneratedMSBuildEditorConfig.editorconfig
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.AssemblyInfoInputs.cache
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.AssemblyInfo.cs
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.csproj.CoreCompileInputs.cache

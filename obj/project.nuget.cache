@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "85XIm6g1Nhw=",
+  "success": true,
+  "projectFilePath": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\SoloviinaUpdaterNET8.0.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Monochromic\\.nuget\\packages\\microsoft.windows.sdk.net.ref\\10.0.17763.57\\microsoft.windows.sdk.net.ref.10.0.17763.57.nupkg.sha512"
+  ],
+  "logs": []
+}

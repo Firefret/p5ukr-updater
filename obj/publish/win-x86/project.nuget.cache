@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "dgSpecHash": "awa+TRzemZI=",
+  "success": true,
+  "projectFilePath": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\SoloviinaUpdaterNET8.0.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Monochromic\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.13\\microsoft.net.illink.tasks.8.0.13.nupkg.sha512",
+    "C:\\Users\\Monochromic\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x86\\8.0.13\\microsoft.netcore.app.runtime.win-x86.8.0.13.nupkg.sha512",
+    "C:\\Users\\Monochromic\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x86\\8.0.13\\microsoft.windowsdesktop.app.runtime.win-x86.8.0.13.nupkg.sha512",
+    "C:\\Users\\Monochromic\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x86\\8.0.13\\microsoft.aspnetcore.app.runtime.win-x86.8.0.13.nupkg.sha512",
+    "C:\\Users\\Monochromic\\.nuget\\packages\\microsoft.windows.sdk.net.ref\\10.0.17763.57\\microsoft.windows.sdk.net.ref.10.0.17763.57.nupkg.sha512"
+  ],
+  "logs": []
+}
