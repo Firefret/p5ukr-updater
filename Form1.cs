@@ -1,16 +1,11 @@
-using System;
-using System.IO;
-using System.Net.Http;
-using System.Diagnostics;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using SharpCompress.Archives;
 using SharpCompress.Archives.Rar;
 using SharpCompress.Common;
+using System.Diagnostics;
 using System.Security.Cryptography;
-using Microsoft.Extensions.Configuration;
+using System.Text;
 
 namespace SoloviinaP5Updater
 {
