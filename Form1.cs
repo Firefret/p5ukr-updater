@@ -11,15 +11,15 @@ namespace SoloviinaP5Updater
 {
     public partial class Form1 : Form
     {
-        private ProgressBar updateProgressBar;
         private IConfiguration configuration;
+        private ProgressBar progressBar;
+        private Label progressLable;
         private Label progressLabel;
 
         public Form1()
         {
             InitializeComponent();
             this.Opacity = 0;
-            updateProgressBar = new ProgressBar();
             progressLabel = new Label();
             LoadConfiguration();
         }
@@ -109,7 +109,7 @@ namespace SoloviinaP5Updater
                 }
                 string fullPath = Path.GetFullPath(Path.Combine(basePath, relativePath));
 
-                if (!fullPath.StartsWith(basePath))
+                if (!fullPath.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
                 {
                     throw new UnauthorizedAccessException("Invalid path detected.");
                 }
@@ -194,11 +194,13 @@ namespace SoloviinaP5Updater
 
         private async Task StartUpdateProcessAsync()
         {
+            Debug.WriteLine("StartUpdateProcessAsync started.");
             string? githubApiUrl = configuration["GitHubApiUrl"];
             if (githubApiUrl == null)
             {
                 MessageBox.Show("GitHub API URL is not configured.",
                                 "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Debug.WriteLine("GitHub API URL is not configured.");
                 this.Close();
                 return;
             }
@@ -214,6 +216,7 @@ namespace SoloviinaP5Updater
                     {
                         string content = await response.Content.ReadAsStringAsync();
                         dynamic? releases = JsonConvert.DeserializeObject(content);
+                        Debug.WriteLine($"GitHub API response content: {content}");
 
                         dynamic? latestRelease = null;
                         Version? latestVersion = null;
@@ -240,15 +243,18 @@ namespace SoloviinaP5Updater
                             string downloadUrl = latestRelease.assets[0].browser_download_url;
                             string assetName = latestRelease.assets[0].name;
                             string filePath = Path.Combine(downloadDirectory, assetName);
+                            Debug.WriteLine($"Download URL: {downloadUrl}, Asset name: {assetName}, File path: {filePath}");
 
                             // Extract checksum from release notes
                             string releaseNotes = latestRelease.body;
                             string? expectedChecksum = ExtractChecksumFromReleaseNotes(releaseNotes);
+                            Debug.WriteLine($"Expected checksum: {expectedChecksum}");
 
                             if (string.IsNullOrEmpty(expectedChecksum))
                             {
                                 MessageBox.Show("Не вдалося отримати контрольну суму з GitHub.",
                                                 "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                Debug.WriteLine("Failed to get checksum from GitHub.");
                                 this.Close();
                                 return;
                             }
@@ -259,15 +265,7 @@ namespace SoloviinaP5Updater
                                 return;
                             }
 
-                            updateProgressBar.Visible = true;
-                            updateProgressBar.Value = 0;
-                            updateProgressBar.Minimum = 0;
-                            updateProgressBar.Maximum = 100;
-                            updateProgressBar.Style = ProgressBarStyle.Continuous;
-
                             bool downloadSuccess = await DownloadFileAsync(downloadUrl, filePath);
-
-                            updateProgressBar.Visible = false;
 
                             if (downloadSuccess)
                             {
@@ -275,6 +273,7 @@ namespace SoloviinaP5Updater
 
                                 // Calculate the checksum of the downloaded file
                                 string actualChecksum = CalculateSHA256Checksum(filePath);
+                                Debug.WriteLine($"Actual checksum: {actualChecksum}");
 
                                 // Log the expected and actual checksums
                                 Debug.WriteLine($"Expected Checksum: {expectedChecksum}");
@@ -291,35 +290,41 @@ namespace SoloviinaP5Updater
 
                                 try
                                 {
-                                    using (var archive = RarArchive.Open(filePath))
+                                    await Task.Run(() =>
                                     {
-                                        var entries = archive.Entries.Where(entry => !entry.IsDirectory).ToList();
-                                        int totalEntries = entries.Count;
-                                        int processedEntries = 0;
-                                        var stopwatch = Stopwatch.StartNew();
-
-                                        foreach (var entry in entries)
+                                        using (var archive = RarArchive.Open(filePath))
                                         {
-                                            string entryPath = Path.GetFullPath(Path.Combine(downloadDirectory, entry.Key));
-                                            if (!entryPath.StartsWith(downloadDirectory))
+                                            var entries = archive.Entries.Where(entry => !entry.IsDirectory).ToList();
+                                            int totalEntries = entries.Count;
+                                            int processedEntries = 0;
+                                            Debug.WriteLine($"Total entries to extract: {totalEntries}");
+
+                                            foreach (var entry in entries)
                                             {
-                                                throw new UnauthorizedAccessException("Invalid path detected.");
+                                                string entryPath = Path.GetFullPath(Path.Combine(downloadDirectory, entry.Key));
+                                                if (!entryPath.StartsWith(downloadDirectory, StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    throw new UnauthorizedAccessException("Invalid path detected.");
+                                                }
+
+                                                entry.WriteToDirectory(downloadDirectory, new ExtractionOptions()
+                                                {
+                                                    ExtractFullPath = true,
+                                                    Overwrite = true
+                                                });
+
+                                                processedEntries++;
+                                                int progress = (int)((processedEntries * 100) / totalEntries);
+                                                Invoke(new Action(() =>
+                                                {
+                                                    progressBar.Value = progress;
+                                                    progressLable.Text = $"Розпакування: {progress}%";
+                                                }));
+                                                Debug.WriteLine($"Processed entries: {processedEntries}, Progress: {progress}%");
                                             }
-
-                                            entry.WriteToDirectory(downloadDirectory, new ExtractionOptions()
-                                            {
-                                                ExtractFullPath = true,
-                                                Overwrite = true
-                                            });
-
-                                            processedEntries++;
-                                            int progress = (int)((processedEntries * 100) / totalEntries);
-                                            updateProgressBar.Value = Math.Min(progress, 100);
-
-                                            double speed = processedEntries / stopwatch.Elapsed.TotalSeconds;
-                                            progressLabel.Text = $"Розпакування: {progress}% - Швидкість: {speed:0.00} entries/s";
                                         }
-                                    }
+                                    });
+
                                     MessageBox.Show($"Українізатор успішно розпаковано та оновлено до версії {latestVersion}.", "Успіх!", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                                     if (File.Exists(filePath))
@@ -335,6 +340,7 @@ namespace SoloviinaP5Updater
                                 {
                                     MessageBox.Show("Не вдалося розпакувати файл: " + ex.Message,
                                                     "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                    Debug.WriteLine($"Exception during extraction: {ex.Message}");
                                 }
                                 Application.Exit();
                             }
@@ -343,6 +349,7 @@ namespace SoloviinaP5Updater
                         {
                             MessageBox.Show("Не вдалося знайти останній реліз з GitHub.",
                                             "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            Debug.WriteLine("Failed to find the latest release on GitHub.");
                             this.Close();
                         }
                     }
@@ -411,6 +418,7 @@ namespace SoloviinaP5Updater
 
         private async Task<bool> DownloadFileAsync(string url, string path)
         {
+            Debug.WriteLine("DownloadFileAsync started.");
             try
             {
                 using (HttpClient client = new HttpClient())
@@ -419,36 +427,32 @@ namespace SoloviinaP5Updater
                     if (response.IsSuccessStatusCode)
                     {
                         long? contentLength = response.Content.Headers.ContentLength;
-                        if (contentLength.HasValue && contentLength.Value > 0)
-                        {
-                            updateProgressBar.Style = ProgressBarStyle.Continuous;
-                        }
-                        else
-                        {
-                            updateProgressBar.Style = ProgressBarStyle.Marquee;
-                        }
-
+                        Debug.WriteLine($"Content length: {contentLength}");
                         using (var contentStream = await response.Content.ReadAsStreamAsync())
                         using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
                         {
                             var buffer = new byte[81920];
-
                             long totalBytesRead = 0;
                             int bytesRead;
+                            progressBar.Value = 0;
+                            progressBar.Visible = true;
+                            progressLable.Visible = true;
                             var stopwatch = Stopwatch.StartNew();
 
                             while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                             {
                                 await fileStream.WriteAsync(buffer, 0, bytesRead);
                                 totalBytesRead += bytesRead;
-
-                                if (contentLength.HasValue && contentLength.Value > 0)
+                                if (contentLength.HasValue)
                                 {
                                     int progress = (int)((totalBytesRead * 100) / contentLength.Value);
-                                    updateProgressBar.Value = Math.Min(progress, 100);
-
-                                    double speed = totalBytesRead / stopwatch.Elapsed.TotalSeconds;
-                                    progressLabel.Text = $"Прогрес: {progress}% - Швидкість: {speed / 1024:0.00} KB/s";
+                                    progressBar.Value = progress;
+                                    double speed = totalBytesRead / stopwatch.Elapsed.TotalSeconds / 1024; // Speed in KB/s
+                                    string speedText = speed > 1000
+                                        ? $"{speed / 1024:F2} Mb/s"
+                                        : $"{speed:F2} KB/s";
+                                    progressLable.Text = $"Завантаження: {progress}% | Швидкість: {speedText}";
+                                    Debug.WriteLine($"Total bytes read: {totalBytesRead}, Progress: {progress}%, Speed: {speedText}");
                                 }
                             }
                         }
@@ -458,6 +462,7 @@ namespace SoloviinaP5Updater
                     {
                         MessageBox.Show("Статус код: " + (int)response.StatusCode,
                                         "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Debug.WriteLine($"Response status code: {(int)response.StatusCode}");
                         return false;
                     }
                 }
@@ -466,6 +471,7 @@ namespace SoloviinaP5Updater
             {
                 MessageBox.Show("Не вдалося завантажити файл: " + ex.Message,
                                 "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Debug.WriteLine($"HttpRequestException: {ex.Message}");
                 return false;
             }
         }
@@ -473,34 +479,35 @@ namespace SoloviinaP5Updater
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
-            updateProgressBar = new ProgressBar();
-            progressLabel = new Label();
+            progressLable = new Label();
+            progressBar = new ProgressBar();
             SuspendLayout();
             // 
-            // updateProgressBar
+            // progressLable
             // 
-            updateProgressBar.Location = new Point(12, 12);
-            updateProgressBar.MarqueeAnimationSpeed = 30;
-            updateProgressBar.Name = "updateProgressBar";
-            updateProgressBar.Size = new Size(673, 32);
-            updateProgressBar.Style = ProgressBarStyle.Continuous;
-            updateProgressBar.TabIndex = 0;
-            // 
-            // progressLabel
-            // 
-            progressLabel.AutoSize = true;
-            progressLabel.BackColor = Color.Transparent;
-            progressLabel.Location = new Point(12, 50);
-            progressLabel.Name = "progressLabel";
-            progressLabel.Size = new Size(0, 15);
-            progressLabel.TabIndex = 1;
+            progressLable.AutoSize = true;
+            progressLable.BackColor = Color.Transparent;
+            progressLable.Location = new Point(12, 50);
+            progressLable.Name = "progressLable";
+            progressLable.Size = new Size(200, 15);
+            progressLable.TabIndex = 1;
+            progressLable.Visible = true; // Ensure the label is visible
+                                          // 
+                                          // progressBar
+                                          // 
+            progressBar.Location = new Point(12, 12);
+            progressBar.MarqueeAnimationSpeed = 30;
+            progressBar.Name = "progressBar";
+            progressBar.Size = new Size(673, 35);
+            progressBar.Style = ProgressBarStyle.Continuous;
+            progressBar.TabIndex = 2;
             // 
             // Form1
             // 
             ClientSize = new Size(697, 80);
-            Controls.Add(progressLabel);
-            Controls.Add(updateProgressBar);
-            Icon = (Icon?)resources.GetObject("$this.Icon");
+            Controls.Add(progressBar);
+            Controls.Add(progressLable);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Updater";
@@ -508,6 +515,7 @@ namespace SoloviinaP5Updater
             ResumeLayout(false);
             PerformLayout();
         }
+
         private void UpdateLocalVersion(string newVersion)
         {
             try
@@ -520,7 +528,7 @@ namespace SoloviinaP5Updater
                 }
                 string fullPath = Path.GetFullPath(Path.Combine(basePath, relativePath));
 
-                if (!fullPath.StartsWith(basePath))
+                if (!fullPath.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
                 {
                     throw new UnauthorizedAccessException("Invalid path detected.");
                 }
