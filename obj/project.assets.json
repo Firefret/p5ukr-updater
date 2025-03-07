@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\SoloviinaUpdaterNET8.0.csproj",
+      "projectUniqueName": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\p5ukr-updater\\SoloviinaUpdaterNET8.0.csproj",
       "projectName": "SoloviinaUpdaterNET8.0",
-      "projectPath": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\SoloviinaUpdaterNET8.0.csproj",
+      "projectPath": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\p5ukr-updater\\SoloviinaUpdaterNET8.0.csproj",
       "packagesPath": "C:\\Users\\Monochromic\\.nuget\\packages\\",
-      "outputPath": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\obj\\",
+      "outputPath": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\p5ukr-updater\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

@@ -217,17 +217,13 @@ namespace SoloviinaP5Updater
                 {
                     if (response.IsSuccessStatusCode)
                     {
-                        // Acquire the total content length if available.
                         long? contentLength = response.Content.Headers.ContentLength;
-
-                        // If contentLength is provided, ensure that the progress bar is in continuous mode.
                         if (contentLength.HasValue && contentLength.Value > 0)
                         {
                             updateProgressBar.Style = ProgressBarStyle.Continuous;
                         }
                         else
                         {
-                            // For unknown length, use marquee style.
                             updateProgressBar.Style = ProgressBarStyle.Marquee;
                         }
 
@@ -237,18 +233,20 @@ namespace SoloviinaP5Updater
                             var buffer = new byte[81920]; // 80 KB buffer
                             long totalBytesRead = 0;
                             int bytesRead;
+                            var stopwatch = Stopwatch.StartNew();
 
-                            // Read the stream chunk-by-chunk.
                             while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                             {
                                 await fileStream.WriteAsync(buffer, 0, bytesRead);
                                 totalBytesRead += bytesRead;
 
-                                // Update progress if content length is known.
                                 if (contentLength.HasValue && contentLength.Value > 0)
                                 {
                                     int progress = (int)((totalBytesRead * 100) / contentLength.Value);
                                     updateProgressBar.Value = Math.Min(progress, 100);
+
+                                    double speed = totalBytesRead / stopwatch.Elapsed.TotalSeconds;
+                                    progressLabel.Text = $"Progress: {progress}% - Speed: {speed / 1024:0.00} KB/s";
                                 }
                             }
                         }
@@ -269,34 +267,44 @@ namespace SoloviinaP5Updater
                 return false;
             }
         }
-
+        private Label progressLabel;
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             updateProgressBar = new ProgressBar();
+            progressLabel = new Label();
             SuspendLayout();
             // 
             // updateProgressBar
             // 
-            updateProgressBar.Location = new System.Drawing.Point(12, 12);
+            updateProgressBar.Location = new Point(12, 12);
             updateProgressBar.MarqueeAnimationSpeed = 30;
             updateProgressBar.Name = "updateProgressBar";
-            updateProgressBar.Size = new System.Drawing.Size(673, 88);
-            // Initially set to continuous so we can update its Value.
+            updateProgressBar.Size = new Size(673, 32);
             updateProgressBar.Style = ProgressBarStyle.Continuous;
             updateProgressBar.TabIndex = 0;
             // 
+            // progressLabel
+            // 
+            progressLabel.AutoSize = true;
+            progressLabel.BackColor = Color.Transparent;
+            progressLabel.Location = new Point(12, 50);
+            progressLabel.Name = "progressLabel";
+            progressLabel.Size = new Size(0, 13);
+            progressLabel.TabIndex = 1;
+            // 
             // Form1
             // 
-            ClientSize = new System.Drawing.Size(697, 111);
+            ClientSize = new Size(697, 80);
+            Controls.Add(progressLabel);
             Controls.Add(updateProgressBar);
-            Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Updater";
-            // Subscribe to the Load event only once.
             Load += Form1_Load;
             ResumeLayout(false);
+            PerformLayout();
         }
     }
 }
