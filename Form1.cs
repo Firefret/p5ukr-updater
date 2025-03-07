@@ -129,7 +129,7 @@ namespace SoloviinaP5Updater
             {
                 using (HttpClient client = new HttpClient())
                 {
-                    client.DefaultRequestHeaders.UserAgent.ParseAdd("request");
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd("SoloviinaP5Updater");
                     HttpResponseMessage response = await client.GetAsync(githubApiUrl);
                     if (response.IsSuccessStatusCode)
                     {
