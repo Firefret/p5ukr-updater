@@ -306,6 +306,9 @@ namespace SoloviinaP5Updater
                                         File.Delete(filePath);
                                         Debug.WriteLine($"Файл {filePath} видалено після розпакування.");
                                     }
+
+                                    // Update the local version file
+                                    UpdateLocalVersion(latestVersion.ToString());
                                 }
                                 catch (Exception ex)
                                 {
@@ -484,6 +487,33 @@ namespace SoloviinaP5Updater
             Load += Form1_Load;
             ResumeLayout(false);
             PerformLayout();
+        }
+        private void UpdateLocalVersion(string newVersion)
+        {
+            try
+            {
+                string basePath = AppDomain.CurrentDomain.BaseDirectory;
+                string relativePath = configuration["LocalVersionFilePath"];
+                string fullPath = Path.GetFullPath(Path.Combine(basePath, relativePath));
+
+                if (!fullPath.StartsWith(basePath))
+                {
+                    throw new UnauthorizedAccessException("Invalid path detected.");
+                }
+
+                File.WriteAllText(fullPath, newVersion, Encoding.UTF8);
+                Debug.WriteLine($"Local version updated to: {newVersion}");
+            }
+            catch (IOException ex)
+            {
+                MessageBox.Show("Не вдалося оновити локальну версію: " + ex.Message,
+                                "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                MessageBox.Show("Не вдалося оновити локальну версію: " + ex.Message,
+                                "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
