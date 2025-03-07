@@ -53,3 +53,4 @@ S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\obj\Release\net8.0
 S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\obj\Release\net8.0-windows10.0.17763.0\SoloviinaUpdaterNET8.0.pdb
 S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\obj\Release\net8.0-windows10.0.17763.0\SoloviinaUpdaterNET8.0.genruntimeconfig.cache
 S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\obj\Release\net8.0-windows10.0.17763.0\ref\SoloviinaUpdaterNET8.0.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Release\net8.0-windows10.0.17763.0\appsettings.json

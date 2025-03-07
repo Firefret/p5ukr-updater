@@ -1,4 +1,5 @@
 S:\Soloviina updater\UpdaterNET8.0\Release\SoloviinaUpdaterNET8.0.pdb
+S:\Soloviina updater\UpdaterNET8.0\Release\appsettings.json
 S:\Soloviina updater\UpdaterNET8.0\Release\D3DCompiler_47_cor3.dll
 S:\Soloviina updater\UpdaterNET8.0\Release\PenImc_cor3.dll
 S:\Soloviina updater\UpdaterNET8.0\Release\PresentationNative_cor3.dll
