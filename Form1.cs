@@ -5,6 +5,11 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Newtonsoft.Json;
+using SharpCompress.Archives;
+using SharpCompress.Archives.Rar;
+using SharpCompress.Common;
+using System.Security.Cryptography;
 
 namespace SoloviinaP5Updater
 {
@@ -15,18 +20,17 @@ namespace SoloviinaP5Updater
         public Form1()
         {
             InitializeComponent();
-            // Set the form’s opacity to 0 so it is effectively invisible.
             this.Opacity = 0;
-            // Note: The Load event is subscribed in InitializeComponent.
         }
 
         private async void Form1_Load(object sender, EventArgs e)
         {
-            // Retrieve versions.
             string localVersion = GetLocalVersion();
             string githubVersion = await GetGithubVersionAsync();
 
-            // Check for errors in retrieving versions.
+            Debug.WriteLine($"Local Version: {localVersion}");
+            Debug.WriteLine($"GitHub Version: {githubVersion}");
+
             if (localVersion == null)
             {
                 MessageBox.Show("Файл ua.txt з локальною версією українізатора відсутній.",
@@ -42,7 +46,6 @@ namespace SoloviinaP5Updater
                 return;
             }
 
-            // Parse versions.
             Version localVerObj, githubVerObj;
             try
             {
@@ -57,7 +60,6 @@ namespace SoloviinaP5Updater
                 return;
             }
 
-            // Compare versions; if the GitHub version is newer, offer update.
             if (githubVerObj > localVerObj)
             {
                 string updateMessage =
@@ -70,10 +72,8 @@ namespace SoloviinaP5Updater
                                         MessageBoxIcon.Question);
                 if (result == DialogResult.Yes)
                 {
-                    // Make the form visible now.
                     this.Opacity = 1;
-                    // Start the update process (with progress tracking).
-                    StartUpdateProcess();
+                    await StartUpdateProcessAsync();
                 }
                 else
                 {
@@ -110,73 +110,231 @@ namespace SoloviinaP5Updater
 
         private async Task<string> GetGithubVersionAsync()
         {
-            string githubUrl = "https://raw.githubusercontent.com/BIDLOV/P5R_UA/main/version.txt";
+            string githubApiUrl = "https://api.github.com/repos/BIDLOV/P5R_UA/releases";
             try
             {
                 using (HttpClient client = new HttpClient())
                 {
-                    HttpResponseMessage response = await client.GetAsync(githubUrl);
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd("request");
+                    HttpResponseMessage response = await client.GetAsync(githubApiUrl);
                     if (response.IsSuccessStatusCode)
                     {
                         string content = await response.Content.ReadAsStringAsync();
-                        return content.Trim();
+                        Debug.WriteLine($"GitHub API response content: {content}");
+                        dynamic releases = JsonConvert.DeserializeObject(content);
+
+                        if (releases.Count == 0)
+                        {
+                            Debug.WriteLine("No releases found in the GitHub repository.");
+                            return null;
+                        }
+
+                        Version latestVersion = null;
+                        foreach (var release in releases)
+                        {
+                            string tagName = release.tag_name;
+                            Debug.WriteLine($"Found release tag: {tagName}");
+                            var match = System.Text.RegularExpressions.Regex.Match(tagName, @"v(\d+\.\d+\.\d+)");
+                            if (match.Success)
+                            {
+                                Version releaseVersion = new Version(match.Groups[1].Value);
+                                Debug.WriteLine($"Parsed release version: {releaseVersion}");
+                                if (latestVersion == null || releaseVersion > latestVersion)
+                                {
+                                    latestVersion = releaseVersion;
+                                }
+                            }
+                            else
+                            {
+                                Debug.WriteLine($"Tag name '{tagName}' does not match the expected version format.");
+                            }
+                        }
+                        return latestVersion?.ToString();
                     }
                     else
                     {
+                        Debug.WriteLine($"GitHub API response status code: {response.StatusCode}");
+                        string errorContent = await response.Content.ReadAsStringAsync();
+                        Debug.WriteLine($"GitHub API response content: {errorContent}");
                         return null;
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Exception in GetGithubVersionAsync: {ex.Message}");
                 return null;
             }
         }
 
-        private async void StartUpdateProcess()
+        private async Task StartUpdateProcessAsync()
         {
-            // Define the URL for the update file hosted on Dropbox.
-            string dropboxUrl = "https://www.dropbox.com/scl/fi/t28h4p0g5xz5e3xceavk4/Florence.exe?rlkey=fqldea5qzrpet622qlvba7oat&st=xububr9b&dl=1";
+            string githubApiUrl = "https://api.github.com/repos/BIDLOV/P5R_UA/releases";
+            string downloadDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
-            // Define the local file path for the updated file.
-            string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Українізатор для Persona 5 Royal.exe");
-
-            // Attempt to delete any existing file using a retry mechanism.
-            if (!await TryToDeleteFileAsync(filePath))
+            try
             {
-                this.Close();
-                return;
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd("request");
+                    HttpResponseMessage response = await client.GetAsync(githubApiUrl);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string content = await response.Content.ReadAsStringAsync();
+                        dynamic releases = JsonConvert.DeserializeObject(content);
+
+                        dynamic latestRelease = null;
+                        Version latestVersion = null;
+                        foreach (var release in releases)
+                        {
+                            string tagName = release.tag_name;
+                            var match = System.Text.RegularExpressions.Regex.Match(tagName, @"v(\d+\.\d+\.\d+)");
+                            if (match.Success)
+                            {
+                                Version releaseVersion = new Version(match.Groups[1].Value);
+                                if (latestVersion == null || releaseVersion > latestVersion)
+                                {
+                                    latestVersion = releaseVersion;
+                                    latestRelease = release;
+                                }
+                            }
+                        }
+
+                        if (latestRelease != null)
+                        {
+                            string downloadUrl = latestRelease.assets[0].browser_download_url;
+                            string assetName = latestRelease.assets[0].name;
+                            string filePath = Path.Combine(downloadDirectory, assetName);
+
+                            // Extract checksum from release notes
+                            string releaseNotes = latestRelease.body;
+                            string expectedChecksum = ExtractChecksumFromReleaseNotes(releaseNotes);
+
+                            if (string.IsNullOrEmpty(expectedChecksum))
+                            {
+                                MessageBox.Show("Не вдалося отримати контрольну суму з GitHub.",
+                                                "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                this.Close();
+                                return;
+                            }
+
+                            if (!await TryToDeleteFileAsync(filePath))
+                            {
+                                this.Close();
+                                return;
+                            }
+
+                            updateProgressBar.Visible = true;
+                            updateProgressBar.Value = 0;
+                            updateProgressBar.Minimum = 0;
+                            updateProgressBar.Maximum = 100;
+                            updateProgressBar.Style = ProgressBarStyle.Continuous;
+
+                            bool downloadSuccess = await DownloadFileAsync(downloadUrl, filePath);
+
+                            updateProgressBar.Visible = false;
+
+                            if (downloadSuccess)
+                            {
+                                await Task.Delay(2000);
+
+                                // Calculate the checksum of the downloaded file
+                                string actualChecksum = CalculateSHA256Checksum(filePath);
+
+                                // Log the expected and actual checksums
+                                Debug.WriteLine($"Expected Checksum: {expectedChecksum}");
+                                Debug.WriteLine($"Actual Checksum: {actualChecksum}");
+
+                                if (expectedChecksum != actualChecksum)
+                                {
+                                    Debug.WriteLine("Checksum mismatch. Download failed.");
+                                    MessageBox.Show("Контрольна сума не збігається. Завантаження не вдалося.",
+                                                    "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                    this.Close();
+                                    return;
+                                }
+
+                                try
+                                {
+                                    using (var archive = RarArchive.Open(filePath))
+                                    {
+                                        var entries = archive.Entries.Where(entry => !entry.IsDirectory).ToList();
+                                        int totalEntries = entries.Count;
+                                        int processedEntries = 0;
+                                        var stopwatch = Stopwatch.StartNew();
+
+                                        foreach (var entry in entries)
+                                        {
+                                            entry.WriteToDirectory(downloadDirectory, new ExtractionOptions()
+                                            {
+                                                ExtractFullPath = true,
+                                                Overwrite = true
+                                            });
+
+                                            processedEntries++;
+                                            int progress = (int)((processedEntries * 100) / totalEntries);
+                                            updateProgressBar.Value = Math.Min(progress, 100);
+
+                                            double speed = processedEntries / stopwatch.Elapsed.TotalSeconds;
+                                            progressLabel.Text = $"Unpacking: {progress}% - Speed: {speed:0.00} entries/s";
+                                        }
+                                    }
+                                    MessageBox.Show("Файл успішно розпаковано та оновлено.", "Успіх!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                                    if (File.Exists(filePath))
+                                    {
+                                        File.Delete(filePath);
+                                        Debug.WriteLine($"Файл {filePath} видалено після розпакування.");
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    MessageBox.Show("Не вдалося розпакувати файл: " + ex.Message,
+                                                    "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                }
+                                Application.Exit();
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("Не вдалося знайти останній реліз з GitHub.",
+                                            "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            this.Close();
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"GitHub API response status code: {response.StatusCode}");
+                        string errorContent = await response.Content.ReadAsStringAsync();
+                        Debug.WriteLine($"GitHub API response content: {errorContent}");
+                        MessageBox.Show("Не вдалося отримати інформацію про останній реліз з GitHub.",
+                                        "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        this.Close();
+                    }
+                }
             }
-
-            // Prepare and show the progress bar.
-            updateProgressBar.Visible = true;
-            updateProgressBar.Value = 0;
-            updateProgressBar.Minimum = 0;
-            updateProgressBar.Maximum = 100;
-            updateProgressBar.Style = ProgressBarStyle.Continuous;
-
-            // Download the file asynchronously with progress tracking.
-            bool downloadSuccess = await DownloadFileAsync(dropboxUrl, filePath);
-
-            // Hide the progress bar.
-            updateProgressBar.Visible = false;
-
-            if (downloadSuccess)
+            catch (Exception ex)
             {
-                // Wait briefly to ensure the file is released.
-                await Task.Delay(2000);
+                Debug.WriteLine($"Exception in StartUpdateProcess: {ex.Message}");
+                MessageBox.Show("Помилка при отриманні інформації про останній реліз: " + ex.Message,
+                                "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                this.Close();
+            }
+        }
 
-                // Try launching the updated file.
-                try
-                {
-                    Process.Start(filePath);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Не вдалося запустити файл: " + ex.Message,
-                                    "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                Application.Exit();
+        private string ExtractChecksumFromReleaseNotes(string releaseNotes)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(releaseNotes, @"SHA256 Checksum\s*`([a-fA-F0-9]{64})`");
+            return match.Success ? match.Groups[1].Value : null;
+        }
+
+        private string CalculateSHA256Checksum(string filePath)
+        {
+            using (FileStream stream = File.OpenRead(filePath))
+            {
+                SHA256 sha256 = SHA256.Create();
+                byte[] hash = sha256.ComputeHash(stream);
+                return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
             }
         }
 
@@ -195,7 +353,6 @@ namespace SoloviinaP5Updater
                 }
                 catch (IOException)
                 {
-                    // Wait before trying again if the file is locked.
                     await Task.Delay(delayMilliseconds);
                 }
                 catch (Exception ex)
@@ -230,7 +387,8 @@ namespace SoloviinaP5Updater
                         using (var contentStream = await response.Content.ReadAsStreamAsync())
                         using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
                         {
-                            var buffer = new byte[81920]; // 80 KB buffer
+                            var buffer = new byte[81920];
+
                             long totalBytesRead = 0;
                             int bytesRead;
                             var stopwatch = Stopwatch.StartNew();
@@ -267,6 +425,7 @@ namespace SoloviinaP5Updater
                 return false;
             }
         }
+
         private Label progressLabel;
         private void InitializeComponent()
         {
@@ -290,7 +449,7 @@ namespace SoloviinaP5Updater
             progressLabel.BackColor = Color.Transparent;
             progressLabel.Location = new Point(12, 50);
             progressLabel.Name = "progressLabel";
-            progressLabel.Size = new Size(0, 13);
+            progressLabel.Size = new Size(0, 15);
             progressLabel.TabIndex = 1;
             // 
             // Form1
