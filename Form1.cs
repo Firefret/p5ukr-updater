@@ -129,7 +129,7 @@ namespace SoloviinaP5Updater
             {
                 using (HttpClient client = new HttpClient())
                 {
-                    client.DefaultRequestHeaders.UserAgent.ParseAdd("request");
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd("SoloviinaP5Updater");
                     HttpResponseMessage response = await client.GetAsync(githubApiUrl);
                     if (response.IsSuccessStatusCode)
                     {
@@ -296,10 +296,10 @@ namespace SoloviinaP5Updater
                                             updateProgressBar.Value = Math.Min(progress, 100);
 
                                             double speed = processedEntries / stopwatch.Elapsed.TotalSeconds;
-                                            progressLabel.Text = $"Unpacking: {progress}% - Speed: {speed:0.00} entries/s";
+                                            progressLabel.Text = $"Розпакування: {progress}% - Швидкість: {speed:0.00} entries/s";
                                         }
                                     }
-                                    MessageBox.Show("Файл успішно розпаковано та оновлено.", "Успіх!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                    MessageBox.Show($"Файл успішно розпаковано та оновлено до версії {latestVersion}.", "Успіх!", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                                     if (File.Exists(filePath))
                                     {
@@ -427,7 +427,7 @@ namespace SoloviinaP5Updater
                                     updateProgressBar.Value = Math.Min(progress, 100);
 
                                     double speed = totalBytesRead / stopwatch.Elapsed.TotalSeconds;
-                                    progressLabel.Text = $"Progress: {progress}% - Speed: {speed / 1024:0.00} KB/s";
+                                    progressLabel.Text = $"Прогрес: {progress}% - Швидкість: {speed / 1024:0.00} KB/s";
                                 }
                             }
                         }

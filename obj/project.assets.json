@@ -755,9 +755,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\p5ukr-updater\\SoloviinaUpdaterNET8.0.csproj",
-      "projectName": "SoloviinaUpdaterNET8.0",
-      "projectPath": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\p5ukr-updater\\SoloviinaUpdaterNET8.0.csproj",
+      "projectUniqueName": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\p5ukr-updater\\Updater.csproj",
+      "projectName": "Updater",
+      "projectPath": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\p5ukr-updater\\Updater.csproj",
       "packagesPath": "C:\\Users\\Monochromic\\.nuget\\packages\\",
       "outputPath": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\p5ukr-updater\\obj\\",
       "projectStyle": "PackageReference",
