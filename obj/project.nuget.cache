@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Tzp0rfjGHwU=",
+  "dgSpecHash": "3LHLT3Rb974=",
   "success": true,
-  "projectFilePath": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\p5ukr-updater\\SoloviinaUpdaterNET8.0.csproj",
+  "projectFilePath": "S:\\Soloviina updater\\UpdaterNET8.0\\WinFormsApp1\\p5ukr-updater\\Updater.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Monochromic\\.nuget\\packages\\microsoft.extensions.configuration\\10.0.0-preview.1.25080.5\\microsoft.extensions.configuration.10.0.0-preview.1.25080.5.nupkg.sha512",
     "C:\\Users\\Monochromic\\.nuget\\packages\\microsoft.extensions.configuration.abstractions\\10.0.0-preview.1.25080.5\\microsoft.extensions.configuration.abstractions.10.0.0-preview.1.25080.5.nupkg.sha512",
