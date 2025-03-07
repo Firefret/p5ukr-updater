@@ -10,17 +10,28 @@ using SharpCompress.Archives;
 using SharpCompress.Archives.Rar;
 using SharpCompress.Common;
 using System.Security.Cryptography;
+using Microsoft.Extensions.Configuration;
 
 namespace SoloviinaP5Updater
 {
     public partial class Form1 : Form
     {
         private ProgressBar updateProgressBar;
+        private IConfiguration configuration;
 
         public Form1()
         {
             InitializeComponent();
             this.Opacity = 0;
+            LoadConfiguration();
+        }
+
+        private void LoadConfiguration()
+        {
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            configuration = builder.Build();
         }
 
         private async void Form1_Load(object sender, EventArgs e)
@@ -52,7 +63,7 @@ namespace SoloviinaP5Updater
                 localVerObj = new Version(localVersion);
                 githubVerObj = new Version(githubVersion);
             }
-            catch (Exception ex)
+            catch (FormatException ex)
             {
                 MessageBox.Show("Некоректний формат версії: " + ex.Message,
                                 "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -92,17 +103,25 @@ namespace SoloviinaP5Updater
         {
             try
             {
-                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ua.txt");
-                if (File.Exists(path))
+                string basePath = AppDomain.CurrentDomain.BaseDirectory;
+                string relativePath = configuration["LocalVersionFilePath"];
+                string fullPath = Path.GetFullPath(Path.Combine(basePath, relativePath));
+
+                if (!fullPath.StartsWith(basePath))
                 {
-                    return File.ReadAllText(path, Encoding.UTF8).Trim();
+                    throw new UnauthorizedAccessException("Invalid path detected.");
+                }
+
+                if (File.Exists(fullPath))
+                {
+                    return File.ReadAllText(fullPath, Encoding.UTF8).Trim();
                 }
                 else
                 {
                     return null;
                 }
             }
-            catch
+            catch (IOException)
             {
                 return null;
             }
@@ -110,7 +129,7 @@ namespace SoloviinaP5Updater
 
         private async Task<string> GetGithubVersionAsync()
         {
-            string githubApiUrl = "https://api.github.com/repos/BIDLOV/P5R_UA/releases";
+            string githubApiUrl = configuration["GitHubApiUrl"];
             try
             {
                 using (HttpClient client = new HttpClient())
@@ -160,7 +179,7 @@ namespace SoloviinaP5Updater
                     }
                 }
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 Debug.WriteLine($"Exception in GetGithubVersionAsync: {ex.Message}");
                 return null;
@@ -169,7 +188,7 @@ namespace SoloviinaP5Updater
 
         private async Task StartUpdateProcessAsync()
         {
-            string githubApiUrl = "https://api.github.com/repos/BIDLOV/P5R_UA/releases";
+            string githubApiUrl = configuration["GitHubApiUrl"];
             string downloadDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
             try
@@ -265,6 +284,12 @@ namespace SoloviinaP5Updater
 
                                         foreach (var entry in entries)
                                         {
+                                            string entryPath = Path.GetFullPath(Path.Combine(downloadDirectory, entry.Key));
+                                            if (!entryPath.StartsWith(downloadDirectory))
+                                            {
+                                                throw new UnauthorizedAccessException("Invalid path detected.");
+                                            }
+
                                             entry.WriteToDirectory(downloadDirectory, new ExtractionOptions()
                                             {
                                                 ExtractFullPath = true,
@@ -313,7 +338,7 @@ namespace SoloviinaP5Updater
                     }
                 }
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 Debug.WriteLine($"Exception in StartUpdateProcess: {ex.Message}");
                 MessageBox.Show("Помилка при отриманні інформації про останній реліз: " + ex.Message,
@@ -355,7 +380,7 @@ namespace SoloviinaP5Updater
                 {
                     await Task.Delay(delayMilliseconds);
                 }
-                catch (Exception ex)
+                catch (UnauthorizedAccessException ex)
                 {
                     MessageBox.Show("Не вдалося видалити старий файл: " + ex.Message,
                                     "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -418,7 +443,7 @@ namespace SoloviinaP5Updater
                     }
                 }
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 MessageBox.Show("Не вдалося завантажити файл: " + ex.Message,
                                 "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);

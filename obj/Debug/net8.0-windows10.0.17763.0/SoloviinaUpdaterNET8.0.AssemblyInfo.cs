@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SoloviinaUpdaterNET8.0")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8f43bcce9146b77ad7a0d4809248375f41c36ae6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+64b0fcea57f4b98d574def33a54b4a2423a0b088")]
 [assembly: System.Reflection.AssemblyProductAttribute("SoloviinaUpdaterNET8.0")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SoloviinaUpdaterNET8.0")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

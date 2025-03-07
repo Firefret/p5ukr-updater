@@ -41,3 +41,15 @@ S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-w
 S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\obj\Debug\net8.0-windows10.0.17763.0\SoloviinaUpdaterNET8.0.csproj.AssemblyReference.cache
 S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\SharpCompress.dll
 S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\ZstdSharp.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\Microsoft.Extensions.Configuration.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\Microsoft.Extensions.Configuration.Abstractions.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\Microsoft.Extensions.Configuration.FileExtensions.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\Microsoft.Extensions.Configuration.Json.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\Microsoft.Extensions.FileProviders.Abstractions.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\Microsoft.Extensions.FileProviders.Physical.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\Microsoft.Extensions.FileSystemGlobbing.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\Microsoft.Extensions.Primitives.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\System.IO.Pipelines.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\System.Text.Encodings.Web.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\System.Text.Json.dll
+S:\Soloviina updater\UpdaterNET8.0\WinFormsApp1\p5ukr-updater\bin\Debug\net8.0-windows10.0.17763.0\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
